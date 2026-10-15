@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ГЕЛИОСФЕРА: Космическая Одиссея</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #03040a; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="viewport"></canvas>
+
+    <div id="loading" class="overlay">
+      <div class="loading-box">
+        <div class="loading-sun"></div>
+        <h1>ГЕЛИОСФЕРА</h1>
+        <p>Загружаем Солнечную систему…</p>
+        <div class="loading-bar"><div class="loading-fill"></div></div>
+      </div>
+    </div>
+
+    <div id="intro-overlay" class="overlay hidden">
+      <div class="intro-content">
+        <div class="intro-kicker">Научно-образовательный симулятор</div>
+        <h1 class="intro-title">ГЕЛИОСФЕРА</h1>
+        <div class="intro-sub">Космическая Одиссея</div>
+        <p class="intro-text" id="intro-caption"></p>
+        <button id="intro-skip" class="btn ghost">Пропустить вступление</button>
+      </div>
+    </div>
+
+    <header id="topbar" class="hidden">
+      <div class="brand">
+        <span class="brand-sun">☀</span>
+        <div>
+          <div class="brand-title">ГЕЛИОСФЕРА</div>
+          <div class="brand-sub">Космическая Одиссея</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <label class="field inline">
+          <span>Графика</span>
+          <select id="quality-select">
+            <option value="low">Мобильная</option>
+            <option value="medium">Средняя</option>
+            <option value="high" selected>Высокая</option>
+            <option value="ultra">Ультра</option>
+          </select>
+        </label>
+        <label class="field inline">
+          <span>Масштаб</span>
+          <select id="scale-select">
+            <option value="museum" selected>Наглядный музейный</option>
+            <option value="real">Реальные пропорции</option>
+          </select>
+        </label>
+        <button id="btn-sun-mode" class="btn" title="Переключить вид Солнца">Солнце: видимый свет</button>
+        <button id="btn-audio" class="btn" title="Звук космоса">Звук: вкл</button>
+        <button id="btn-intro" class="btn" title="Показать вступление заново">Вступление</button>
+        <button id="btn-help" class="btn ghost" title="Управление">?</button>
+      </div>
+    </header>
+
+    <nav id="modes-bar" class="hidden">
+      <button class="mode-btn active" data-mode="explore">🌍 Обзор</button>
+      <button class="mode-btn" data-mode="compare">⚖️ Сравни миры</button>
+      <button class="mode-btn" data-mode="scanner">🔬 Спектр-сканер</button>
+      <button class="mode-btn" data-mode="lightspeed">⚡ Скорость света</button>
+      <button class="mode-btn" data-mode="whatif">🧪 Что если?</button>
+      <button class="mode-btn" data-mode="dangers">☄️ Опасности</button>
+      <button class="mode-btn" data-mode="lifequest">🧬 Где искать жизнь?</button>
+      <button class="mode-btn" data-mode="surface">👣 Посадка</button>
+      <button class="mode-btn" data-mode="fly">🚀 Стань космонавтом</button>
+      <button class="mode-btn" data-mode="missions">🛸 Миссии</button>
+      <button class="mode-btn" data-mode="sandbox">🛠️ Песочница</button>
+      <button class="mode-btn" data-mode="photo">📸 Фотолаборатория</button>
+    </nav>
+
+    <aside id="body-panel" class="hidden">
+      <h2>Тела системы</h2>
+      <ul id="body-list"></ul>
+      <div class="panel-hint">ЛКМ — вращение · Колесо — масштаб<br/>ПКМ — панорама · <b>Пробел</b> — разрез недр</div>
+    </aside>
+
+    <aside id="info-card" class="hidden">
+      <button id="info-close" class="card-close">×</button>
+      <div id="info-content"></div>
+    </aside>
+
+    <section id="timeline" class="hidden">
+      <div class="tl-row">
+        <button id="tl-today" class="btn small">Сегодня</button>
+        <button id="tl-back" class="btn small">⏮ Назад</button>
+        <button id="tl-play" class="btn small accent">⏸ Пауза</button>
+        <button id="tl-fwd" class="btn small">Вперёд ⏭</button>
+        <label class="field inline">
+          <span>Дата</span>
+          <input type="date" id="tl-date" />
+        </label>
+        <label class="field inline grow">
+          <span>Скорость</span>
+          <input type="range" id="tl-speed" min="-5" max="5" step="0.02" value="0" />
+          <span id="tl-speed-label">1 сек/сек</span>
+        </label>
+      </div>
+      <div class="tl-row tl-dates">
+        <span class="tl-dates-label">Исторические даты:</span>
+        <button class="btn tiny date-btn" data-date="1969-07-20">20.07.1969 · Аполлон-11</button>
+        <button class="btn tiny date-btn" data-date="1977-09-05">05.09.1977 · Вояджер-1</button>
+        <button class="btn tiny date-btn" data-date="2021-02-18">18.02.2021 · Perseverance</button>
+        <button class="btn tiny date-btn" data-date="2026-08-12">12.08.2026 · Затмение</button>
+        <button class="btn tiny date-btn" data-birthday="1">🎂 Мой день рождения</button>
+      </div>
+    </section>
+
+    <div id="cutaway-bar" class="hidden">
+      <button id="btn-cutaway" class="btn accent">Вскрыть недра (Пробел)</button>
+      <div id="cutaway-caption" class="hidden"></div>
+    </div>
+
+    <div id="mode-panel" class="hidden"></div>
+
+    <div id="toast" class="hidden"></div>
+
+    <div id="help-modal" class="overlay hidden">
+      <div class="modal">
+        <button id="help-close" class="card-close">×</button>
+        <h2>Управление</h2>
+        <ul class="help-list">
+          <li><b>ЛКМ + перетаскивание</b> — вращение камеры</li>
+          <li><b>Колесо мыши</b> — приближение / отдаление</li>
+          <li><b>ПКМ + перетаскивание</b> — панорама</li>
+          <li><b>Пробел</b> — разрез недр выбранной планеты</li>
+          <li><b>1–9, 0</b> — быстрый выбор тела (Солнце, Меркурий… Нептун)</li>
+          <li><b>Приближение к планете</b> — автоматически включается «Локальное пространство орбиты» (плавающий центр координат)</li>
+          <li><b>Кнопки режимов сверху</b> — лаборатории и миссии</li>
+        </ul>
+        <h2>О проекте</h2>
+        <p class="help-about">«Гелиосфера» — интерактивный 3D-симулятор Солнечной системы: живое Солнце, честные орбиты на любую дату,
+        разрезы недр, атмосферное рассеяние, кольца Сатурна и десятки научных экспериментов. Всё рассчитано по реальным
+        эфемеридам и понятно даже ребёнку 10 лет.</p>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
