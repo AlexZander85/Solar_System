@@ -34,4 +34,8 @@ export interface AppContext {
   setSystemVisible(v: boolean): void;
   startSurface(bodyId: string): void;
   stopSurface(): void;
+  /** 3D-реконструкция посадки: 'apollo' — Луна, 'perseverance' — Марс. */
+  playCeremony(kind: 'apollo' | 'perseverance'): void;
+  /** Режим марсохода на текущей поверхности. */
+  toggleRover(): void;
 }

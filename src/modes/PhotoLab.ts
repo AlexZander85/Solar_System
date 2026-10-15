@@ -2,6 +2,7 @@
  * PhotoLab — «Фотолаборатория (Космический телескоп)»:
  * свободная камера, настройки снимка, поиск затмений, экспорт без UI.
  */
+import * as THREE from 'three';
 import type { AppContext } from './context';
 import { nextEclipse } from '../data/ephemeris';
 
@@ -9,6 +10,7 @@ export class PhotoLab {
   active = false;
   private ctx: AppContext;
   private savedExposure = 1.05;
+  private eclipseSim = false;
 
   constructor(ctx: AppContext) {
     this.ctx = ctx;
@@ -24,6 +26,7 @@ export class PhotoLab {
 
   deactivate(): void {
     this.active = false;
+    this.eclipseSim = false;
     this.ctx.renderer.toneMappingExposure = this.savedExposure;
     this.ctx.rig.fovOverride = null;
     document.getElementById('app')!.classList.remove('photo-clean');
@@ -42,6 +45,7 @@ export class PhotoLab {
         <input type="range" id="ph-exp" min="30" max="220" value="${Math.round(this.ctx.renderer.toneMappingExposure * 100)}" /></label>
       <div class="stack" style="margin-top:10px">
         <button id="ph-eclipse" class="btn">🌘 Найти ближайшее затмение</button>
+        <button id="ph-sim" class="btn">${this.eclipseSim ? '✓ Модель затмения включена' : '🌒 Смоделировать затмение'}</button>
         <button id="ph-clean" class="btn">🖼 Чистый кадр (скрыть интерфейс)</button>
         <button id="ph-shot" class="btn accent">📸 Сохранить снимок</button>
       </div>
@@ -67,6 +71,15 @@ export class PhotoLab {
       this.ctx.setSimDate(new Date(e.date));
       this.ctx.selectBody('moon');
       this.ctx.toast(`Машина времени переключилась на: ${e.label}. Уловите тень Луны на Солнце!`);
+    });
+    document.getElementById('ph-sim')?.addEventListener('click', () => {
+      this.eclipseSim = !this.eclipseSim;
+      this.ctx.toast(
+        this.eclipseSim
+          ? '🌒 Модель затмения: Луна встала на линию «камера — Солнце», угловые размеры дисков совпадают — как в жизни!'
+          : 'Модель затмения выключена: Луна вернулась на свою орбиту.'
+      );
+      this.renderPanel();
     });
     document.getElementById('ph-clean')?.addEventListener('click', () => {
       document.getElementById('app')!.classList.toggle('photo-clean');
@@ -96,6 +109,23 @@ export class PhotoLab {
   }
 
   update(_dt: number): void {
-    /* камера управляется общим CameraRig */
+    // Модель затмения: Луна на линии «камера — Солнце» с равными угловыми размерами
+    if (this.eclipseSim) {
+      const moon = this.ctx.bodyObject('moon');
+      const scale = this.ctx.getScale();
+      const sunR = scale.radiusUnits(this.ctx.bodyDef('sun'));
+      const moonR = scale.radiusUnits(this.ctx.bodyDef('moon'));
+      const sunPos = new THREE.Vector3();
+      this.ctx.bodyScenePos('sun', sunPos);
+      const camPos = this.ctx.camera.position;
+      const distToSun = camPos.distanceTo(sunPos);
+      const dir = sunPos.clone().sub(camPos).normalize();
+      // Условие полного затмения: rMoon/dMoon = rSun/dSun
+      const dMoon = distToSun * (moonR / Math.max(sunR, 1e-6));
+      const moonVisual = camPos.clone().addScaledVector(dir, Math.min(dMoon, distToSun * 0.45));
+      if (moon) {
+        moon.group.position.copy(moonVisual).sub(this.ctx.spaces.root.position);
+      }
+    }
   }
 }

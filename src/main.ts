@@ -460,7 +460,42 @@ function startSurface(bodyId: string): void {
   focusId = bodyId;
   ui.selectBody(bodyId);
   ui.showInfo(def);
-  ui.toast(`Посадка: ${def.name}. WASD — шаг, мышь — осмотреться, Пробел — прыжок с честной гравитацией!`);
+  if (bodyId === 'venus') runVenusDescent();
+  else {
+    ui.toast(`Посадка: ${def.name}. WASD — шаг, мышь — осмотреться, Пробел — прыжок, G — бросить камень, E — бурить!`);
+  }
+}
+
+/** Спуск сквозь плотные облака Венеры с радаром. */
+function runVenusDescent(): void {
+  const overlay = document.getElementById('descent-overlay')!;
+  const text = document.getElementById('descent-text')!;
+  overlay.classList.remove('hidden');
+  overlay.style.opacity = '1';
+  const stages: Array<[number, string]> = [
+    [0, '☁️ Вы входите в плотные облака серной кислоты…'],
+    [2200, '🌡 Температура растёт: +200 °C… +400 °C…'],
+    [4400, '⚖️ Давление 92 атмосферы — как на глубине 900 м в океане.'],
+    [6600, '📡 РАДАР ВКЛЮЧЁН: облака стали прозрачными!']
+  ];
+  for (const [ms, msg] of stages) {
+    window.setTimeout(() => {
+      text.style.opacity = '0';
+      window.setTimeout(() => {
+        text.textContent = msg;
+        text.style.opacity = '1';
+      }, 250);
+    }, ms);
+  }
+  window.setTimeout(() => {
+    overlay.style.opacity = '0';
+    canvas.style.filter = 'grayscale(1) contrast(1.5) brightness(1.12)'; // радарный визор
+    window.setTimeout(() => {
+      canvas.style.filter = 'none';
+      overlay.classList.add('hidden');
+      ui.toast('Посадка на раскалённую равнину Венеры: +465 °C. Блинчатые купола — лавовые вулканы этой кухни!');
+    }, 3200);
+  }, 9000);
 }
 
 function stopSurface(): void {
@@ -508,10 +543,43 @@ const appContext: AppContext = {
   toast: (msg) => ui.toast(msg),
   setSystemVisible,
   startSurface,
-  stopSurface
+  stopSurface,
+  playCeremony: (kind) => {
+    const bodyId = kind === 'apollo' ? 'moon' : 'mars';
+    if (!surfaceWorld || focusId !== bodyId) {
+      startSurface(bodyId);
+    }
+    surfaceWorld?.startCeremony(kind);
+    ui.toast(
+      kind === 'apollo'
+        ? '🎬 Реконструкция: посадка «Аполлона-11» на Луну, 20 июля 1969 года.'
+        : '🎬 Реконструкция: «7 минут ужаса» и небесный кран Perseverance на Марсе.'
+    );
+  },
+  toggleRover: () => {
+    if (!surfaceWorld) {
+      startSurface('mars');
+    }
+    surfaceWorld?.toggleRover();
+    ui.toast(
+      surfaceWorld?.mode === 'rover'
+        ? '🚜 Вы за рулём марсохода! WASD — езда, E — бурить камни, G — камень в космосе.'
+        : '👣 Вы вышли из ровера и продолжаете пешком.'
+    );
+  }
 };
 
 const modeManager = new ModeManager(appContext);
+
+// События от SurfaceWorld (буровые образцы, реплики церемоний)
+window.addEventListener('helios:drill', (e) => {
+  const d = (e as CustomEvent).detail as { count: number; sample: string; body: string };
+  ui.toast(`🔬 Образец ${d.count}: ${d.sample} (${d.body}). Бурение завершено!`);
+});
+window.addEventListener('helios:ceremony', (e) => {
+  const d = (e as CustomEvent).detail as { msg: string };
+  ui.toast(d.msg, 5200);
+});
 
 /* ============================== Ввод ============================== */
 
@@ -519,6 +587,8 @@ const pointer = { down: false, button: 0, x: 0, y: 0 };
 const keys = new Set<string>();
 const lookAcc = { dx: 0, dy: 0 };
 let jumpPressed = false;
+let actionPressed = false;
+let stonePressed = false;
 
 canvas.addEventListener('pointerdown', (e) => {
   pointer.down = true;
@@ -575,6 +645,14 @@ window.addEventListener('keydown', (e) => {
     else if (modeManager.mode === 'explore') toggleCutaway();
     return;
   }
+  if (e.code === 'KeyE' && surfaceWorld) {
+    actionPressed = true;
+    return;
+  }
+  if (e.code === 'KeyG' && surfaceWorld) {
+    stonePressed = true;
+    return;
+  }
   const digitMap: Record<string, string> = {
     Digit1: 'sun',
     Digit2: 'mercury',
@@ -614,9 +692,13 @@ function readSurfaceInput(): SurfaceInput {
     forward: fwd,
     side,
     jump: jumpPressed,
-    run: keys.has('ShiftLeft') || keys.has('ShiftRight')
+    run: keys.has('ShiftLeft') || keys.has('ShiftRight'),
+    action: actionPressed,
+    throwStone: stonePressed
   };
   jumpPressed = false;
+  actionPressed = false;
+  stonePressed = false;
   return input;
 }
 

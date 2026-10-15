@@ -121,10 +121,23 @@ export class Spacecraft {
         <div id="flight-status" style="font-size:11px;color:var(--muted);margin-top:6px">Топливо 100% · Полёт нормальный</div>
       </div>
       <div class="verdict ok">💡 <b>Гравитационная праща:</b> подлетите к планете «по касательной» — она ускорит вас сама, как Вояджер у Сатурна!</div>
+      <button id="slingshot" class="btn small" style="margin-top:8px">⚡ Тренажёр пращи: сброс у Юпитера</button>
       <button id="ship-close" class="btn ghost" style="margin-top:10px">Завершить полёт</button>
       `
     );
     document.getElementById('ship-close')?.addEventListener('click', () => this.deactivate());
+    document.getElementById('slingshot')?.addEventListener('click', () => this.slingshot());
+  }
+
+  /** Тренажёр: корабль на гиперболе мимо Юпитера — гравитация сделает всё сама. */
+  private slingshot(): void {
+    this.ctx.selectBody('jupiter');
+    const r = this.ctx.getScale().radiusUnits(this.ctx.bodyDef('jupiter'));
+    this.group.position.set(0, r * 0.9, r * 5.2);
+    this.velocity.set(-7.5, 0, -2.2);
+    this.landed = false;
+    this.crashed = false;
+    this.ctx.toast('⚡ Праща запущена: смотрите, как гравитация Юпитера «ловит» корабль и швыряет прочь — именно так летел Вояджер!');
   }
 
   update(dt: number, input: FlightInput): void {

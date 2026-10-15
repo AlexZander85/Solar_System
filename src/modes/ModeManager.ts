@@ -160,10 +160,17 @@ export class ModeManager {
     }).join('');
     this.ctx.ui.showModePanel(
       '👣 Посадка и прогулка',
-      'Выберите мир для посадки. WASD — ходьба, мышь — обзор, <b>Пробел</b> — прыжок (гравитация честная!). На Титане можно взлетать, как с крыльями.',
+      'Выберите мир для посадки. WASD — ходьба, мышь — обзор, <b>Пробел</b> — прыжок, <b>G</b> — бросить камень, <b>E</b> — бурить. На Титане можно взлетать, как с крыльями.',
       `
       <div class="stack">${landable}</div>
-      <div class="stat" style="margin-top:10px"><b>🪐 Специальные режимы</b>
+      <div class="stat" style="margin-top:10px"><b>🚜 Техника и реконструкции</b>
+        <div class="stack" style="margin-top:6px">
+          <button id="rover-btn" class="btn small">🚜 Марсоход в кратере Езеро</button>
+          <button id="cer-apollo" class="btn small">🎬 Посадка «Аполлона-11»</button>
+          <button id="cer-perseverance" class="btn small">🎬 Небесный кран Perseverance</button>
+        </div>
+      </div>
+      <div class="stat" style="margin-top:8px"><b>🪐 Специальные режимы</b>
         <div class="stack" style="margin-top:6px">
           <button id="ring-dive" class="btn small">🪐 Нырнуть в кольца Сатурна</button>
           <button id="jupiter-dive" class="btn small">☁️ Погружение в облака Юпитера</button>
@@ -177,6 +184,11 @@ export class ModeManager {
         this.ctx.startSurface((btn as HTMLElement).dataset.land!);
       });
     }
+    document.getElementById('rover-btn')?.addEventListener('click', () => this.ctx.toggleRover());
+    document.getElementById('cer-apollo')?.addEventListener('click', () => this.ctx.playCeremony('apollo'));
+    document.getElementById('cer-perseverance')?.addEventListener('click', () =>
+      this.ctx.playCeremony('perseverance')
+    );
     document.getElementById('ring-dive')?.addEventListener('click', () => this.startRingDive());
     document.getElementById('jupiter-dive')?.addEventListener('click', () => this.jupiterDive());
     document.getElementById('surface-close')?.addEventListener('click', () => {
